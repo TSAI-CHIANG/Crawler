@@ -1,0 +1,82 @@
+---
+title: "Untitled"
+author: "TING"
+date: "2020/12/27"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(tidyverse)
+options(stringsAsFactors = F)
+options(verbose = T)
+options(scipen = 999)
+library(stringr)
+library(tidytext) 
+library(jiebaR)
+library(lubridate)
+library(purrr)
+library(dplyr)
+```
+
+
+#斷詞
+```{r}
+post_BG <- readRDS("../assignments/content_BG.rds")%>%
+    mutate(com_id = row_number()) 
+
+ stopWords<- readRDS("../data2/stopWords.rds")
+```
+
+
+#try emoji 斷詞
+
+```{r}
+
+y<- read.csv("../Dcard&PTT_Label - ptt_dcard_post_label.csv") %>% 
+    slice(5550:5560)  
+
+#c("🥺") #找這個表情的utf8編碼
+segment_not<- c('\U0001f97a')
+
+
+cutter <- worker()
+new_user_word(cutter, segment_not)
+tagger <- worker("tag")
+new_user_word(tagger, segment_not)
+
+com_1 <- y %>% 
+    mutate(word = map(Tem,function(x)segment(x, tagger))) %>% 
+    select(word, everything()) %>% 
+    mutate(word = purrr::map(word, function(x)str_c(names(x), "_", x))) %>% 
+    unnest(word) %>% 
+    separate(word, c("pos", "word"), sep = "_") %>% 
+    filter(!(word %in% stopWords$word))
+
+
+
+
+
+```
+
+#emoji 偵測
+```{r}
+x<- readRDS('../Dcard_com.rds') %>% slice(1:1000)
+
+segment_not<- c('\U0001f97a','\U0001f62d','\U0001f44d')
+cutter <- worker()
+new_user_word(cutter, segment_not)
+tagger <- worker("tag")
+new_user_word(tagger, segment_not)
+
+com_1 <- x %>% 
+    mutate(word = map(tem,function(x)segment(x, tagger))) %>% 
+    select(word, everything()) %>% 
+    mutate(word = purrr::map(word, function(x)str_c(names(x), "_", x))) %>% 
+    unnest(word) %>% 
+    separate(word, c("pos", "word"), sep = "_") %>% 
+    filter(!(word %in% stopWords$word))
+
+
+
+```
